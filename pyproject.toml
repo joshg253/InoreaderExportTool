@@ -1,0 +1,7 @@
+[project]
+name = "InoreaderExportTool"
+version = "0.1.0"
+description = "Tool for backing up data from Inoreader"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inoreader OAuth Callback</title>
+</head>
+<body>
+  <h1>Inoreader OAuth Callback</h1>
+  <p id="status">Looking for authorization code…</p>
+  <pre id="code"></pre>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const statusEl = document.getElementById('status');
+    const codeEl = document.getElementById('code');
+
+    if (code) {
+      statusEl.textContent = 'Authorization code found. Copy this into your CLI tool:';
+      codeEl.textContent = code;
+    } else {
+      statusEl.textContent = 'No "code" parameter found in URL.';
+    }
+  </script>
+</body>
+</html>

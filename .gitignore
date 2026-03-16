@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+
+# uv lockfile
+uv.lock
+
+# Personal exports (raw from Inoreader)
+exported_from_ino/
+
+# Script outputs
+output/
+
+# Secrets / config
+.env
+.env.*
