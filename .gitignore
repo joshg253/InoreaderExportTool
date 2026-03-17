@@ -18,6 +18,16 @@ exported_from_ino/
 # Script outputs
 output/
 
+# Backups
+backup/
+
+# Cache
+state/
+
 # Secrets / config
 .env
 .env.*
+
+# Logs
+logs/
+*.log
