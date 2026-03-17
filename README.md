@@ -7,42 +7,42 @@ Tool for backing up tagged items from Inoreader using the official API and local
 1. Install Python (3.11+ recommended) and optionally create/activate a virtual env.
 2. Install dependencies (managed by `uv`):
 
-   ```bash
-   uv sync
-```
+    ```bash
+    uv sync
+    ```
 
 3. Create `.env` from the example:
 
-```bash
-copy .env.example .env   # Windows
-# or
-cp .env.example .env     # macOS/Linux
-```
+    ```bash
+    copy .env.example .env   # Windows
+    # or
+    cp .env.example .env     # macOS/Linux
+    ```
 
 4. Run the setup helper to configure OAuth:
 
-```bash
-uv run ino_setup.py
-```
+    ```bash
+    uv run ino_setup.py
+    ```
 
     - First run (no `.env` yet) does full setup:
-        - Prompts for `INOREADER_CLIENT_ID`, `INOREADER_CLIENT_SECRET`, `INOREADER_REDIRECT_URI`.
-        - Prompts for `INOREADER_SCOPE` with:
-`Scope [Enter=keep, r=read, rw=readwrite, custom=type value]:`
-        - Prints an auth URL, you open it, authorize, and paste back the `code`.
-        - Saves `INOREADER_ACCESS_TOKEN` and `INOREADER_REFRESH_TOKEN` into `.env`.
+      - Prompts for `INOREADER_CLIENT_ID`, `INOREADER_CLIENT_SECRET`, `INOREADER_REDIRECT_URI`.
+      - Prompts for `INOREADER_SCOPE` with:
+        `Scope [Enter=keep, r=read, rw=readwrite, custom=type value]:`
+      - Prints an auth URL, you open it, authorize, and paste back the `code`.
+      - Saves `INOREADER_ACCESS_TOKEN` and `INOREADER_REFRESH_TOKEN` into `.env`.
     - Later, to refresh tokens:
 
-```bash
-uv run ino_setup.py
-```
+      ```bash
+      uv run ino_setup.py
+      ```
 
-This uses the existing `.env` and refresh token to get a new access token and update `.env`.
+      This uses the existing `.env` and refresh token to get a new access token and update `.env`.
     - To force a clean full setup (e.g. new app or redirect URI):
 
-```bash
-uv run ino_setup.py --full
-```
+      ```bash
+      uv run ino_setup.py --full
+      ```
 
 
 ## Core tools
@@ -54,14 +54,14 @@ Fetch items for a single Inoreader label via `stream/contents` and write per-run
 **Input**
 
 - Env vars from `.env`:
-    - `INOREADER_ACCESS_TOKEN` (used at runtime).
+  - `INOREADER_ACCESS_TOKEN` (used at runtime).
 - Label name (e.g. `travel`, `android-stuff`).
 
 **Behavior**
 
 - Calls Inoreader’s `stream/contents/user/-/label/<label>` API and pages until done or `max_items`.
 - Writes each run to:
-    - `output/<label>_<unix_timestamp>.json` (immutable per-run snapshot).
+  - `output/<label>_<unix_timestamp>.json` (immutable per-run snapshot).
 - Optionally updates `state/state.json` with pending item IDs for that label if you have state helpers wired in.
 
 **Usage**
@@ -105,7 +105,6 @@ uv run --env-file .env ino_merge_outputs.py travel
 ```
 
 After running:
-
 - `backup/travel_*.json` = batch snapshots.
 - `backup/travel.json` = full backup for `travel`.
 
@@ -157,7 +156,6 @@ uv run --env-file .env ino_run_batch.py --clear-after
 ### ino_setup.py
 
 Single entry point for Inoreader OAuth:
-
 - Full setup when `.env` is missing or `--full` is passed.
 - Refresh access token when `.env` already exists.
 
@@ -179,8 +177,8 @@ Low-level helpers around the Inoreader API:
 State management for label runs (backed by `state/state.json`):
 
 - Tracks, per label:
-    - `pending_ids` – items whose label is still applied.
-    - `done_ids` – items where the label has been cleared.
+  - `pending_ids` – items whose label is still applied.
+  - `done_ids` – items where the label has been cleared.
 
 Typical helpers:
 
