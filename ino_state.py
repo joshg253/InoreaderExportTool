@@ -51,3 +51,16 @@ def mark_ids_done(state: Dict[str, Any], label: str, ids: List[str]) -> None:
             done.add(iid)
     entry["pending_ids"] = list(pending)
     entry["done_ids"] = list(done)
+
+
+def summarize_labels(state: Dict[str, Any]) -> List[str]:
+    """
+    Return human-readable summary lines for each label in state.json.
+    """
+    labels = state.get("labels", {})
+    lines: List[str] = []
+    for label, entry in labels.items():
+        pending = len(entry.get("pending_ids", []))
+        done = len(entry.get("done_ids", []))
+        lines.append(f"{label}: pending={pending}, done={done}")
+    return sorted(lines)

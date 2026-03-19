@@ -19,11 +19,33 @@ AUTH_URL = "https://www.inoreader.com/oauth2/auth"
 
 class RateLimitInfo:
     def __init__(self, headers: HTTPMessage) -> None:
-        self.zone1_limit = headers.get("X-Reader-Zone1-Limit")
-        self.zone1_usage = headers.get("X-Reader-Zone1-Usage")
-        self.zone2_limit = headers.get("X-Reader-Zone2-Limit")
-        self.zone2_usage = headers.get("X-Reader-Zone2-Usage")
-        self.reset_after = headers.get("X-Reader-Limits-Reset-After")
+        # These really are "str or None"
+        self.zone1_limit: Optional[str] = headers.get("X-Reader-Zone1-Limit")
+        self.zone1_usage: Optional[str] = headers.get("X-Reader-Zone1-Usage")
+        self.zone2_limit: Optional[str] = headers.get("X-Reader-Zone2-Limit")
+        self.zone2_usage: Optional[str] = headers.get("X-Reader-Zone2-Usage")
+        self.reset_after: Optional[str] = headers.get("X-Reader-Limits-Reset-After")
+
+    def remaining_zone1(self) -> int:
+        try:
+            return int(self.zone1_limit or "0") - int(self.zone1_usage or "0")
+        except ValueError:
+            return 0
+
+    def remaining_zone2(self) -> int:
+        try:
+            return int(self.zone2_limit or "0") - int(self.zone2_usage or "0")
+        except ValueError:
+            return 0
+
+    def can_afford(self, zone: int, calls: int = 1) -> bool:
+        if calls <= 0:
+            return True
+        if zone == 1:
+            return self.remaining_zone1() >= calls
+        if zone == 2:
+            return self.remaining_zone2() >= calls
+        return False
 
     @staticmethod
     def _format_reset(reset_after: Optional[str]) -> str:
@@ -195,6 +217,9 @@ def list_exportable_labels(access_token: str) -> Tuple[List[str], RateLimitInfo]
     return labels, rlim
 
 
+ZONE1_EXHAUSTED = False
+
+
 def fetch_stream_for_label(
     label: str,
     access_token: str,
@@ -208,6 +233,8 @@ def fetch_stream_for_label(
 
     Returns (items, last_rate_limit_info).
     """
+    global ZONE1_EXHAUSTED
+
     all_items: List[Dict[str, Any]] = []
     continuation: Optional[str] = None
     last_rlim: Optional[RateLimitInfo] = None
@@ -235,6 +262,9 @@ def fetch_stream_for_label(
             print("HTTP error while fetching stream:", e.code, e.reason)
             err_body = e.read().decode("utf-8", errors="replace")
             print("Response body:", err_body)
+            if e.code == 429:
+                print("Zone1 daily limit reached while fetching stream; stopping early.")
+            ZONE1_EXHAUSTED = True
             break
 
         data = json.loads(body)

@@ -3,8 +3,15 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import urllib.error
 
-from ino_api import get_access_token, list_exportable_labels, RateLimitInfo
+from ino_api import (
+    get_access_token,
+    list_exportable_labels,
+    RateLimitInfo,
+    TAGS_URL,
+    api_get,
+)
 from ino_process_tag import run_for_label as fetch_for_label
 from ino_merge_outputs import run_for_label as merge_for_label
 from ino_clear import clear_label_from_state  # new import
@@ -41,6 +48,16 @@ def run_for_label_batch(label: str, clear_after: bool) -> None:
 
     # 3) Optionally clear tag from articles based on state
     if clear_after:
+        access_token = get_access_token()
+        # cheap check using tag/list (or any GET you already use)
+        _, rlim = api_get(TAGS_URL, access_token)
+        if not rlim.can_afford(zone=2, calls=1):
+            print(
+                f"  Skipping clear for {label!r}: "
+                f"Zone2 {rlim.zone2_usage}/{rlim.zone2_limit}."
+            )
+            return
+
         clear_label_from_state(label)
 
 
@@ -60,7 +77,18 @@ def main() -> None:
 
     access_token = get_access_token()
 
-    labels, rlim = list_exportable_labels(access_token)
+    try:
+        labels, rlim = list_exportable_labels(access_token)
+    except urllib.error.HTTPError as e:
+        if e.code == 429:
+            print(
+                "HTTP 429 from tag/list: Zone1 daily limit reached; "
+                "cannot start batch run today."
+            )
+            err_body = e.read().decode("utf-8", errors="replace")
+            print("Response body:", err_body)
+            return
+        raise
     if not labels:
         print("No labels found from tag/list; nothing to do.")
         return
