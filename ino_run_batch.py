@@ -14,12 +14,20 @@ from ino_api import (
 )
 from ino_process_tag import run_for_label as fetch_for_label
 from ino_merge_outputs import run_for_label as merge_for_label
-from ino_clear import clear_label_from_state  # new import
+from ino_clear import clear_label_from_state
+from ino_state import load_state
+from ino_setup import refresh_tokens_non_interactive
 
 
 STATE_DIR = Path("state")
 STATE_DIR.mkdir(exist_ok=True)
 LABELS_PATH = STATE_DIR / "labels.json"
+
+
+def refresh_token_if_needed() -> None:
+    # For now, always attempt a non-interactive refresh once per batch run.
+    print("Attempting non-interactive token refresh...")
+    refresh_tokens_non_interactive()
 
 
 def write_labels_state(labels: list[str], rlim: RateLimitInfo) -> None:
@@ -75,6 +83,7 @@ def main() -> None:
     args = parser.parse_args()
     clear_after = args.clear_after
 
+    refresh_token_if_needed()
     access_token = get_access_token()
 
     try:

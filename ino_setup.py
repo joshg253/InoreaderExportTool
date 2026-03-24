@@ -147,6 +147,61 @@ def refresh_tokens(env: Dict[str, str]) -> Dict[str, str]:
     return tokens
 
 
+def refresh_tokens_non_interactive() -> None:
+    """
+    Refresh INOREADER_ACCESS_TOKEN using the existing refresh token,
+    without any prompts, and update .env in place.
+
+    Intended for batch use (e.g. ino_run_batch.py).
+    """
+    if not ENV_PATH.exists():
+        print(".env does not exist; cannot refresh non-interactively.")
+        return
+
+    env = load_env(ENV_PATH)
+
+    if "INOREADER_REFRESH_TOKEN" not in env:
+        print("No INOREADER_REFRESH_TOKEN in .env; cannot refresh non-interactively.")
+        return
+
+    # Do NOT prompt for scope; reuse whatever is already there.
+    data = {
+        "client_id": env["INOREADER_CLIENT_ID"],
+        "client_secret": env["INOREADER_CLIENT_SECRET"],
+        "grant_type": "refresh_token",
+        "refresh_token": env["INOREADER_REFRESH_TOKEN"],
+    }
+    encoded = urllib.parse.urlencode(data).encode("utf-8")
+    req = urllib.request.Request(
+        TOKEN_URL,
+        data=encoded,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            body = resp.read().decode("utf-8")
+    except Exception as exc:
+        print(f"Non-interactive token refresh failed: {exc!r}")
+        return
+
+    tokens = json.loads(body)
+    access_token = tokens.get("access_token")
+    new_refresh = tokens.get("refresh_token")
+
+    if not access_token:
+        print(
+            "Non-interactive refresh did not return access_token; leaving .env unchanged."
+        )
+        return
+
+    env["INOREADER_ACCESS_TOKEN"] = access_token
+    if new_refresh:
+        env["INOREADER_REFRESH_TOKEN"] = new_refresh
+
+    save_env(ENV_PATH, env)
+    print("Non-interactive refresh complete. New access token saved to .env.")
+
+
 def do_full_setup(env: Dict[str, str]) -> None:
     # Ensure we have basics and scope
     env = ensure_env_file()
